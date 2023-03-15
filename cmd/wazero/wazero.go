@@ -129,6 +129,13 @@ func doRun(args []string, stdOut io.Writer, stdErr logging.Writer, exit func(cod
 		"inherits any environment variables from the calling process. "+
 			"Variables specified with the <env> flag are appended to the inherited list.")
 
+	var autoTmpdir bool
+	flags.BoolVar(&autoTmpdir, "auto-tmpdir", false,
+		"exports the env TMPDIR to the correct value depending on what is mounted."+
+			"For example, if the guest path /tmp is mounted, this sets TMPDIR=/tmp. If the "+
+			"guest path / is mounted, this sets TMPDIR to the OS-specific value. Otherwise, "+
+			"this mounts /tmp to the OS-specific temp directory and sets TMPDIR=/tmp.")
+
 	var mounts sliceFlag
 	flags.Var(&mounts, "mount",
 		"filesystem path to expose to the binary in the form of <path>[:<wasm path>][:ro]. "+
@@ -187,7 +194,11 @@ func doRun(args []string, stdOut io.Writer, stdErr logging.Writer, exit func(cod
 		env = append(env, fields[0], fields[1])
 	}
 
-	rootPath, fsConfig := validateMounts(mounts, stdErr, exit)
+	rootPath, tmpGuestDir, fsConfig := validateMounts(mounts, autoTmpdir, stdErr, exit)
+
+	if autoTmpdir {
+		env = append(env, "TMPDIR", tmpGuestDir)
+	}
 
 	wasm, err := os.ReadFile(wasmPath)
 	if err != nil {
@@ -296,8 +307,9 @@ func doRun(args []string, stdOut io.Writer, stdErr logging.Writer, exit func(cod
 	exit(0)
 }
 
-func validateMounts(mounts sliceFlag, stdErr logging.Writer, exit func(code int)) (rootPath string, config wazero.FSConfig) {
+func validateMounts(mounts sliceFlag, autoTmpdir bool, stdErr logging.Writer, exit func(code int)) (rootPath, tmpGuestDir string, config wazero.FSConfig) {
 	config = wazero.NewFSConfig()
+	var rootPathReadOnly bool
 	for _, mount := range mounts {
 		if len(mount) == 0 {
 			fmt.Fprintln(stdErr, "invalid mount: empty string")
@@ -311,44 +323,71 @@ func validateMounts(mounts sliceFlag, stdErr logging.Writer, exit func(code int)
 		}
 
 		// TODO(anuraaga): Support wasm paths with colon in them.
-		var dir, guestPath string
+		var path, guestDir string
 		if clnIdx := strings.LastIndexByte(mount, ':'); clnIdx != -1 {
-			dir, guestPath = mount[:clnIdx], mount[clnIdx+1:]
+			path, guestDir = mount[:clnIdx], mount[clnIdx+1:]
 		} else {
-			dir = mount
-			guestPath = dir
+			path = mount
+			guestDir = path
 		}
 
 		// Provide a better experience if duplicates are found later.
-		if guestPath == "" {
-			guestPath = "/"
+		if guestDir == "" {
+			guestDir = "/"
 		}
 
 		// Eagerly validate the mounts as we know they should be on the host.
-		if abs, err := filepath.Abs(dir); err != nil {
-			fmt.Fprintf(stdErr, "invalid mount: path %q invalid: %v\n", dir, err)
+		if abs, err := filepath.Abs(path); err != nil {
+			fmt.Fprintf(stdErr, "invalid mount: path %q invalid: %v\n", path, err)
 			exit(1)
 		} else {
-			dir = abs
+			path = abs
 		}
 
-		if stat, err := os.Stat(dir); err != nil {
-			fmt.Fprintf(stdErr, "invalid mount: path %q error: %v\n", dir, err)
+		if stat, err := os.Stat(path); err != nil {
+			fmt.Fprintf(stdErr, "invalid mount: path %q error: %v\n", path, err)
 			exit(1)
 		} else if !stat.IsDir() {
-			fmt.Fprintf(stdErr, "invalid mount: path %q is not a directory\n", dir)
+			fmt.Fprintf(stdErr, "invalid mount: path %q is not a directory\n", path)
 		}
 
 		if readOnly {
-			config = config.WithReadOnlyDirMount(dir, guestPath)
+			config = config.WithReadOnlyDirMount(path, guestDir)
 		} else {
-			config = config.WithDirMount(dir, guestPath)
+			config = config.WithDirMount(path, guestDir)
 		}
 
-		if guestPath == "/" {
-			rootPath = dir
+		switch guestDir {
+		case "/":
+			rootPath = path
+			rootPathReadOnly = readOnly
+		case "/tmp":
+			if readOnly {
+				fmt.Fprintln(stdErr, "invalid mount: /tmp is read-only")
+				exit(1)
+			}
+			tmpGuestDir = guestDir
 		}
 	}
+
+	if !autoTmpdir || tmpGuestDir != "" {
+		return
+	}
+
+	tmpDir := os.TempDir()
+
+	// Re-use the existing mount, if we can.
+	if rootPath != "" && !rootPathReadOnly && strings.HasPrefix(tmpDir, rootPath) {
+		// Ensure if used on windows, the input path is translated to a POSIX one.
+		tmpDir = platform.ToPosixPath(tmpDir)
+		// Strip the volume of the path, for example C:\
+		tmpGuestDir = tmpDir[len(filepath.VolumeName(tmpDir)):]
+		return
+	}
+
+	// Otherwise, mount it
+	tmpGuestDir = "/tmp"
+	config = config.WithDirMount(tmpDir, tmpGuestDir)
 	return
 }
 
