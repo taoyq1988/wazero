@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -153,7 +154,8 @@ func TestCallContext_Close(t *testing.T) {
 		m, err := s.Instantiate(testCtx, &Module{}, t.Name(), sysCtx, nil)
 		require.NoError(t, err)
 
-		require.EqualError(t, m.Close(testCtx), "error closing")
+		// In sysfs.FS, non syscall errors map to syscall.EIO.
+		require.EqualErrno(t, syscall.EIO, m.Close(testCtx))
 
 		// Verify our intended side-effect
 		_, ok := fsCtx.LookupFile(3)
@@ -251,7 +253,8 @@ func TestCallContext_CallDynamic(t *testing.T) {
 		m, err := s.Instantiate(testCtx, &Module{}, t.Name(), sysCtx, nil)
 		require.NoError(t, err)
 
-		require.EqualError(t, m.Close(testCtx), "error closing")
+		// In sysfs.FS, non syscall errors map to syscall.EIO.
+		require.EqualErrno(t, syscall.EIO, m.Close(testCtx))
 
 		// Verify our intended side-effect
 		_, ok := fsCtx.LookupFile(3)
