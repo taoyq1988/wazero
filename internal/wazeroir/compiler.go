@@ -359,6 +359,8 @@ func (c *Compiler) compile(sig *wasm.FunctionType, body []byte, localTypes []was
 		kind:      controlFrameKindFunction,
 	})
 
+	fmt.Println("======== func", c.sig.String())
+
 	// Now, enter the function body.
 	for !c.controlFrames.empty() && c.pc < uint64(len(c.body)) {
 		if err := c.handleInstruction(); err != nil {
@@ -401,6 +403,9 @@ func (c *Compiler) handleInstruction() error {
 	}
 	// Now we handle each instruction, and
 	// emit the corresponding wazeroir operations to the results.
+
+	fmt.Printf("%d:%s\n", c.pc, wasm.InstructionName(op))
+
 operatorSwitch:
 	switch op {
 	case wasm.OpcodeUnreachable:

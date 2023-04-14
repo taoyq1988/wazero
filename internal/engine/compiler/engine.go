@@ -1093,7 +1093,7 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (*code, e
 			continue
 		}
 
-		if false {
+		if true {
 			fmt.Printf("compiling op=%s: %s\n", op.Kind, cmp)
 		}
 		var err error
