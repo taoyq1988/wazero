@@ -272,6 +272,13 @@ func (n *nodePool) allocNode() (ret *nodeImpl) {
 	return
 }
 
+func (a *AssemblerImpl) IterNode() {
+	node := a.root
+	for ; node != nil; node = node.next {
+		fmt.Println("==> node:", node.String())
+	}
+}
+
 // AllocateNOP implements asm.AssemblerBase.
 func (a *AssemblerImpl) AllocateNOP() asm.Node {
 	n := a.nodePool.allocNode()

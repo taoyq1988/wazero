@@ -253,6 +253,10 @@ func (c *amd64Compiler) compile() (code []byte, stackPointerCeil uint64, err err
 	// Note this MUST be called before Assemble() below.
 	c.assignStackPointerCeil(stackPointerCeil)
 
+	ass := c.assembler.(*amd64.AssemblerImpl)
+	fmt.Println("------ asm -------")
+	ass.IterNode()
+
 	code, err = c.assembler.Assemble()
 	if err != nil {
 		return
