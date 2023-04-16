@@ -41,3 +41,4 @@ zig-out/
 .DS_Store
 
 target
+sys.log*

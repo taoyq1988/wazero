@@ -1098,9 +1098,9 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (*code, e
 			continue
 		}
 
-		if true {
+		f := true
+		if f {
 			logger.Info.Printf("compiling op=%s: %s", op.Kind, cmp)
-			cmp.NowNode()
 		}
 		var err error
 		switch op.Kind {
@@ -1387,6 +1387,9 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (*code, e
 		}
 		if err != nil {
 			return nil, fmt.Errorf("operation %s: %w", op.Kind.String(), err)
+		}
+		if f {
+			cmp.NowNode()
 		}
 	}
 
