@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/tetratelabs/wazero/logger"
 	"math"
 	"strings"
 
@@ -359,7 +360,7 @@ func (c *Compiler) compile(sig *wasm.FunctionType, body []byte, localTypes []was
 		kind:      controlFrameKindFunction,
 	})
 
-	fmt.Println("======== func", c.sig.String())
+	logger.Info.Println("======== func", c.sig.String())
 
 	// Now, enter the function body.
 	for !c.controlFrames.empty() && c.pc < uint64(len(c.body)) {
@@ -404,7 +405,7 @@ func (c *Compiler) handleInstruction() error {
 	// Now we handle each instruction, and
 	// emit the corresponding wazeroir operations to the results.
 
-	fmt.Printf("%d:%s\n", c.pc, wasm.InstructionName(op))
+	logger.Info.Printf("%d:%s", c.pc, wasm.InstructionName(op))
 
 operatorSwitch:
 	switch op {

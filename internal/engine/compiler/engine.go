@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/tetratelabs/wazero/logger"
 	"reflect"
 	"runtime"
 	"sort"
@@ -1073,6 +1074,10 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (*code, e
 		irOpBegins = make([]asm.Node, len(ir.Operations))
 	}
 
+	logger.Info.Println("=== start ===")
+	cmp.NowNode()
+	logger.Info.Println("=== end ===")
+
 	var skip bool
 	for i := range ir.Operations {
 		op := &ir.Operations[i]
@@ -1094,7 +1099,8 @@ func compileWasmFunction(cmp compiler, ir *wazeroir.CompilationResult) (*code, e
 		}
 
 		if true {
-			fmt.Printf("compiling op=%s: %s\n", op.Kind, cmp)
+			logger.Info.Printf("compiling op=%s: %s", op.Kind, cmp)
+			cmp.NowNode()
 		}
 		var err error
 		switch op.Kind {

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/tetratelabs/wazero/logger"
 	"math"
 
 	"github.com/tetratelabs/wazero/internal/asm"
@@ -275,7 +276,7 @@ func (n *nodePool) allocNode() (ret *nodeImpl) {
 func (a *AssemblerImpl) IterNode() {
 	node := a.root
 	for ; node != nil; node = node.next {
-		fmt.Println("==> node:", node.String())
+		logger.Info.Printf("==> node: %s", node.String())
 	}
 }
 

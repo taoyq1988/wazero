@@ -7,6 +7,7 @@ package compiler
 import (
 	"bytes"
 	"fmt"
+	"github.com/tetratelabs/wazero/logger"
 	"math"
 
 	"github.com/tetratelabs/wazero/internal/asm"
@@ -253,9 +254,7 @@ func (c *amd64Compiler) compile() (code []byte, stackPointerCeil uint64, err err
 	// Note this MUST be called before Assemble() below.
 	c.assignStackPointerCeil(stackPointerCeil)
 
-	ass := c.assembler.(*amd64.AssemblerImpl)
-	fmt.Println("------ asm -------")
-	ass.IterNode()
+	//c.NowNode()
 
 	code, err = c.assembler.Assemble()
 	if err != nil {
@@ -265,6 +264,12 @@ func (c *amd64Compiler) compile() (code []byte, stackPointerCeil uint64, err err
 	c.br.Reset(code)
 	code, err = platform.MmapCodeSegment(c.br, len(code))
 	return
+}
+
+func (c *amd64Compiler) NowNode() {
+	ass := c.assembler.(*amd64.AssemblerImpl)
+	logger.Info.Println("------ asm -------")
+	ass.IterNode()
 }
 
 // compileUnreachable implements compiler.compileUnreachable for the amd64 architecture.
