@@ -917,8 +917,16 @@ const (
 
 func (ce *callEngine) execWasmFunction(ctx context.Context, m *wasm.ModuleInstance) {
 	codeAddr := ce.initialFn.codeInitialAddress
-	modAddr := ce.initialFn.moduleInstance
-	ce.ctx = ctx
+	modAddr := ce.initialFn.moduleInstance // R12
+	ce.ctx = ctx                           // R13
+
+	if ce.moduleInstance != modAddr {
+		ce.moduleInstance = modAddr
+		ce.globalElement0Address = uintptr(unsafe.Pointer(&modAddr.Globals))
+
+	} else {
+
+	}
 
 entry:
 	{

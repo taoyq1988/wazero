@@ -42,7 +42,7 @@ func main() {
 
 	test1 := mod.ExportedFunction("add")
 
-	rs, err := test1.Call(ctx, 1, 2)
+	rs, err := test1.Call(ctx, 1)
 	if err != nil {
 		log.Panicln(err)
 	}

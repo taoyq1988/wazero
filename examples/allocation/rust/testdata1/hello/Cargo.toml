@@ -11,3 +11,8 @@ edition = "2021"
 name = "hello"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
+
+#[profile.release]
+#opt-level = 0
+#lto = true
+#codegen-units = 1

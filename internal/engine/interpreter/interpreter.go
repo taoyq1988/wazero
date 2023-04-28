@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/tetratelabs/wazero/logger"
 	"math"
 	"math/bits"
 	"sync"
@@ -513,8 +514,12 @@ func (ce *callEngine) callNativeFunc(ctx context.Context, m *wasm.ModuleInstance
 	ce.pushFrame(frame)
 	body := frame.f.parent.body
 	bodyLen := uint64(len(body))
+
 	for frame.pc < bodyLen {
 		op := &body[frame.pc]
+
+		logger.Info.Println("wasm operation", op.String())
+
 		// TODO: add description of each operation/case
 		// on, for example, how many args are used,
 		// how the stack is modified, etc.

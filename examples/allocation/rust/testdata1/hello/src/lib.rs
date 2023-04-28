@@ -13,10 +13,10 @@
 //     return (s.as_ptr() as u32, s.len() as u32);
 // }
 
-struct Point {
-    x: bool,
-    y: f32,
-}
+// struct Point {
+//     x: bool,
+//     y: f32,
+// }
 
 // #[no_mangle]
 // unsafe fn test1(a: f32, b: f32) -> f32 {
@@ -40,9 +40,17 @@ struct Point {
 // }
 
 #[no_mangle]
-fn add(a: i32, b: i32) -> i32 {
-    return a + b;
+fn add(a: usize) -> u32 {
+    let arr:[u32;4] = [10,20,30,40];
+    return arr[a];
+    // return a + b;
+    // return callAdd(a, b);
 }
+
+// fn callAdd(a: i32, b: i32) -> i32 {
+//     let c = a + b;
+//     return c;
+// }
 
 // fn test2(a: i32) -> Point {
 //     let n = a !=2;
